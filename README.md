@@ -5,9 +5,9 @@
 Ce projet calcule et optimise une maille de forage (grille de trous) à l'intérieur d'un polygone défini, en respectant les contraintes de sécurité (bootlegs).
 
 ## Installation
-Créer l'environnement virtuel : ``
-Activer l'environnement virtuel : `.\venv\Scripts\activate`
-Installer les dépendances : `pip install -r requirements.txt`
+- Créer l'environnement virtuel : `python -m venv venv`
+- Activer l'environnement virtuel : `.\venv\Scripts\activate`
+- Installer les dépendances : `pip install -r requirements.txt`
 
 ## Utilisation
 Le programme principal se lance via la commande python `src/main.py`
