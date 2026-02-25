@@ -1,12 +1,13 @@
-from algo.fragmentation_grid import FragmentationGrid
-from shapely.geometry import Polygon
-from algo.constants import *
-import numpy as np
 import json
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
 
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Circle
 from shapely import vectorized
+from shapely.geometry import Polygon
+
+from algo.constants import *
+from algo.fragmentation_grid import FragmentationGrid
 
 class DrillModel:
     def __init__(self, boundary, bootlegs):
@@ -21,14 +22,50 @@ class DrillModel:
         self.current_dy = 0
 
     def optimize(self):
+        """
+        Exécute le processus complet d'optimisation du plan de forage.
+
+        L'algorithme procède en deux phases :
+        1. Heuristique initiale : Génère une première solution viable.
+        2. Recuit Simulé : Affine la solution en explorant l'espace des possibles pour 
+           maximiser la fragmentation tout en minimisant la sur-fragmentation.
+        """
         self.determine_initial_solution()
         self.improve_solution_by_simulated_annealing()
 
-    def get_objective(self, holes):
+    def get_objective(self, holes: np.ndarray) -> float:
+        """
+        Calcule le score de performance global (fitness) d'un plan de forage donné.
+
+        L'objectif est de maximiser la surface fragmentée tout en appliquant une 
+        pénalité pour les zones en sur-fragmentation. Le score est calculé selon 
+        la formule : Score = Surface_Frag - (λ * Surface_Over).
+
+        Args:
+            holes (np.ndarray): Liste des coordonnées des trous à évaluer.
+
+        Returns:
+            float: Le score final. Un score plus élevé indique un meilleur plan 
+                   de forage pour l'optimiseur.
+        """
         A_frag, A_frag_over = self.fragmentation_grid.evaluate_fragmentation_metrics(holes)
         return A_frag - (LAMDBA * A_frag_over)
     
-    def filter_holes(self, holes):
+    def filter_holes(self, holes: np.ndarray) -> np.ndarray:
+        """
+        Filtre les trous de forage selon les contraintes géométriques.
+
+        Cette méthode applique deux filtres successifs :
+        1. Filtre Spatial : Ne conserve que les trous situés à l'intérieur ou sur le bord 
+           du polygone de forage.
+        2. Filtre de Sécurité : Élimine les trous situés trop près des zones de danger (bootlegs).
+
+        Args:
+            holes (np.ndarray): Matrice brute des coordonnées des trous (n_holes, 2).
+
+        Returns:
+            np.ndarray: Une matrice filtrée ne contenant que les coordonnées des trous valides.
+        """
         # Remove points outside of the polygon
         mask_in = vectorized.contains(self.polygon, holes[:, 0], holes[:, 1]) | vectorized.touches(self.polygon, holes[:, 0], holes[:, 1])
         holes = holes[mask_in]
@@ -39,6 +76,12 @@ class DrillModel:
         return holes
 
     def determine_initial_solution(self):
+        """
+        Génère une première configuration de forage en maille quinconce.
+        
+        L'algorithme crée une grille régulière, puis filtre les points 
+        selon les contraintes géométriques.
+        """
         if len(self.current_holes) != 0:
             return # An initial solution exists
 
@@ -61,6 +104,18 @@ class DrillModel:
         self.current_holes = holes
 
     def improve_solution_by_simulated_annealing(self):
+        """
+        Affine le plan de forage via une métaheuristique de Recuit Simulé.
+        
+        L'algorithme explore différents décalages (dx, dy) de la grille initiale. 
+        Il accepte systématiquement les améliorations et accepte les dégradations 
+        avec une probabilité décroissante (température) pour s'extraire des optimums locaux.
+        
+        Paramètres clés :
+            - T_init / T_min : Température de départ et d'arrêt.
+            - cooling_param : Vitesse de refroidissement.
+            - history : Mémorisation pour éviter de recalculer des décalages déjà testés.
+        """
         # SIMULATED ANNEALING PARAMS 
         T_init = 50
         T_min = 0.001
@@ -135,6 +190,12 @@ class DrillModel:
             self.save_holes_to_json()
 
     def save_holes_to_json(self, filename="data/output.json"):
+        """
+        Exporte la configuration finale des trous de forage vers un fichier JSON.
+
+        Args:
+            filename (str): Chemin du fichier de destination. Par défaut "data/output.json".
+        """
         data = {
             "holes": self.current_holes.tolist() if hasattr(self.current_holes, 'tolist') else self.current_holes
         }
@@ -143,6 +204,12 @@ class DrillModel:
             json.dump(data, f, indent=2)
 
     def plot(self):
+        """
+        Génère une figure Matplotlib représentant le plan de forage final.
+
+        Returns:
+            matplotlib.figure.Figure: L'objet figure contenant le rendu visuel.
+        """
         fig, ax = plt.subplots(figsize=(6, 5))
         ax.grid(True, which='major', linestyle='-', linewidth='0.5', color='gray', alpha=0.5)
 

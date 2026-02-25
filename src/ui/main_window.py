@@ -1,11 +1,13 @@
+import json
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import json
-import numpy as np
-import os
-from algo.drill_model import DrillModel
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
+from algo.drill_model import DrillModel
 
 class MainWindow:
     def __init__(self, root):

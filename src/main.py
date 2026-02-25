@@ -1,6 +1,7 @@
-import tkinter as tk
-from ui.main_window import MainWindow
 import sys
+import tkinter as tk
+
+from ui.main_window import MainWindow
 
 def main():
     root = tk.Tk()
